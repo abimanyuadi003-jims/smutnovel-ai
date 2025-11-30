@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { InputForm } from './components/InputForm';
 import { OutputDisplay } from './components/OutputDisplay';
 import { NovelConfig, OutputMode } from './types';
-import { generateNovelContent } from './services/gemini';
+import { generateNovelContent } from './services/geminiService';
 import { Sparkles, Feather } from 'lucide-react';
 
 const App: React.FC = () => {
