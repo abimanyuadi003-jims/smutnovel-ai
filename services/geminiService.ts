@@ -7,7 +7,9 @@ export class GeminiService {
   private modelName = 'gemini-1.5-flash';
 
   constructor() {
-    this.genAI = new GoogleGenerativeAI(process.env.API_KEY || '');
+    // Mengambil API Key dari environment Vercel
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+    this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
   public async *streamChat(history: Message[], newMessage: string, language: Language): AsyncGenerator<string, void, unknown> {
@@ -21,7 +23,7 @@ export class GeminiService {
         systemInstruction: SYSTEM_INSTRUCTION + languageInstruction
       });
 
-      // Format history sesuai standar SDK resmi
+      // Format history agar sesuai aturan Google
       const chatHistory = history
         .filter(msg => msg.text && msg.text.trim() !== "")
         .map(msg => ({
@@ -46,7 +48,7 @@ export class GeminiService {
       }
     } catch (error) {
       console.error("Gemini API Error:", error);
-      yield "Error: Unable to connect to The SmutNovel Quilt. Please check your API Key configuration.";
+      yield "Error: Gagal terhubung. Pastikan API Key di Vercel sudah benar.";
     }
   }
 }
