@@ -1,58 +1,50 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Message, Role, Language } from "../types";
-import { SYSTEM_INSTRUCTION } from "../constants";
+import { NovelConfig } from "../types"; // Pastikan types.ts Anda punya definisi ini, atau kita pakai 'any' dulu jika darurat
 
+// --- Setup API ---
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+const genAI = new GoogleGenerativeAI(apiKey);
+const model = genAI.getGenerativeModel({ 
+  model: 'gemini-1.5-flash',
+  systemInstruction: "You are The SmutNovel Quilt, an expert erotic novel architect. Write visceral, high-retention prose."
+});
+
+// --- Fungsi 1: Untuk Chat Interface (Backup) ---
 export class GeminiService {
-  private genAI: GoogleGenerativeAI;
-  private modelName = 'gemini-1.5-flash';
-
-  constructor() {
-    // KITA UBAH DI SINI:
-    // Hapus 'import.meta.env' yang bikin error.
-    // Kita pakai 'process.env' saja karena sudah diatur di vite.config.ts
-    const apiKey = process.env.GEMINI_API_KEY as string;
-    
-    this.genAI = new GoogleGenerativeAI(apiKey);
-  }
-
-  public async *streamChat(history: Message[], newMessage: string, language: Language): AsyncGenerator<string, void, unknown> {
-    try {
-      const languageInstruction = language === 'ID' 
-        ? "\n\n[INSTRUCTION: OUTPUT MUST BE IN INDONESIAN LANGUAGE]" 
-        : "\n\n[INSTRUCTION: OUTPUT MUST BE IN ENGLISH LANGUAGE]";
-
-      const model = this.genAI.getGenerativeModel({ 
-        model: this.modelName,
-        systemInstruction: SYSTEM_INSTRUCTION + languageInstruction
-      });
-
-      const chatHistory = history
-        .filter(msg => msg.text && msg.text.trim() !== "")
-        .map(msg => ({
-          role: msg.role === Role.USER ? 'user' : 'model',
-          parts: [{ text: msg.text }],
-        }));
-
-      const chat = model.startChat({
-        history: chatHistory,
-        generationConfig: {
-          temperature: 0.8,
-        },
-      });
-
-      const result = await chat.sendMessageStream(newMessage);
-
-      for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
-        if (chunkText) {
-          yield chunkText;
-        }
-      }
-    } catch (error) {
-      console.error("Gemini API Error:", error);
-      yield "Error: Gagal terhubung. Cek API Key di Vercel.";
-    }
-  }
+  // Biarkan kosong atau sesuaikan jika nanti dipakai
 }
-
 export const geminiService = new GeminiService();
+
+// --- Fungsi 2: Untuk Novel Generator (YANG WAJIB ADA) ---
+export const generateNovelContent = async (config: any): Promise<string> => {
+  try {
+    const prompt = `
+      WRITE A NOVEL OUTLINE & OPENING CHAPTER.
+      
+      Configuration:
+      - Language: ${config.language}
+      - Genre: ${config.genre}
+      - Trope: ${config.trope}
+      - Tone: ${config.tone}
+      - Explicit Level: ${config.explicitLevel}
+      - POV: ${config.pov}
+      - Protagonist: ${config.protagonist}
+      - Plot Summary: ${config.plotSummary}
+      
+      Fetishes/Elements to Include:
+      ${config.fetishes.join(', ')}
+
+      Please provide:
+      1. A Catchy Title
+      2. A Blurb
+      3. Chapter 1 (Full Prose, applying "Show, Don't Tell")
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error: any) {
+    console.error("Gemini Error:", error);
+    throw new Error("Gagal membuat novel: " + error.message);
+  }
+};
