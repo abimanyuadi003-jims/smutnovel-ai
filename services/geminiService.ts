@@ -7,8 +7,11 @@ export class GeminiService {
   private modelName = 'gemini-1.5-flash';
 
   constructor() {
-    // Mengambil API Key dari environment Vercel
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+    // KITA UBAH DI SINI:
+    // Hapus 'import.meta.env' yang bikin error.
+    // Kita pakai 'process.env' saja karena sudah diatur di vite.config.ts
+    const apiKey = process.env.GEMINI_API_KEY as string;
+    
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
@@ -23,7 +26,6 @@ export class GeminiService {
         systemInstruction: SYSTEM_INSTRUCTION + languageInstruction
       });
 
-      // Format history agar sesuai aturan Google
       const chatHistory = history
         .filter(msg => msg.text && msg.text.trim() !== "")
         .map(msg => ({
@@ -48,7 +50,7 @@ export class GeminiService {
       }
     } catch (error) {
       console.error("Gemini API Error:", error);
-      yield "Error: Gagal terhubung. Pastikan API Key di Vercel sudah benar.";
+      yield "Error: Gagal terhubung. Cek API Key di Vercel.";
     }
   }
 }
